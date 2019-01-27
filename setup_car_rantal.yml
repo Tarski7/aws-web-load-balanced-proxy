@@ -1,0 +1,32 @@
+---
+- hosts: application_nodes
+  become: yes
+  vars:
+    jar_location: /home/ec2-user/environment/jkanclerz/sysd_java/my-car-renta-spring/target/carrental-0.0.1-SNAPSHOT.jar
+    app_location: /opt/carrental/carrental.jar
+    app_user: carrental
+  tasks:
+    - name: "install jre"
+      yum:
+        name: java-1.8.0-openjdk
+        state: present
+    - name: "create path"
+      file:
+        path: /opt/carrental
+        state: present
+    - name: "copy .jar to remote machine"
+      copy:
+        src: "{{jar_location}}"
+        dest: "{{app_location}}"
+    - name: "create user for service"
+      user:
+        name: "{{app_user}}"
+    - name: "copy systemd confi"
+      template:
+        src: template/carrental.service
+        dest: /etc/systemd/system/carrental.service
+    - name: "start service"
+      systemd:
+        name: "carrental"
+        daemon_reload: yes
+        state: restarted

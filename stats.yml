@@ -1,0 +1,48 @@
+---
+- hosts: application_nodes
+  become: yes
+  vars:
+    telegraf_url: https://dl.influxdata.com/telegraf/releases/telegraf-1.8.3-1.x86_64.rpm
+    stats_nodes_ip: 172.31.25.138
+  tasks:
+    - name: "Install telegraf"
+      yum:
+        name: "{{telegraf_url}}"
+        state: present
+    - copy:
+        src: templates/telegraf.conf
+        dest: /etc/telegraf/telegraf.conf
+    - service:
+        name: telegraf
+        state: restarted
+        
+- hosts: metrics
+  become: yes
+  vars:
+    influxdb_url: https://dl.influxdata.com/influxdb/releases/influxdb-1.7.1.x86_64.rpm
+    grafana_url: https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana-5.3.4-1.x86_64.rpm 
+  tasks:
+    - yum:
+        name: "{{influxdb_url}}"
+        state: present
+    - service:
+        name: influxdb
+        state: restarted
+        
+    - yum:
+        name: "{{grafana_url}}"
+        state: present
+    - service:
+        name: grafana-server
+        state: restarted
+        
+- hosts: application
+  become: yes
+  gather_facts: yes
+  vars:
+    domain_name: "tarkowskim.pl"
+    service_admin_email: "tarkowskim@gmail.com"
+    service_root_directory: "/opt"
+    letsencrypt_ssl_dir: "/etc/letsencrypt/live"
+  tasks:
+    - include_tasks: nginx/tasks/nginx.yml

@@ -1,0 +1,32 @@
+- hosts: application_nodes
+  become: yes
+  tasks:
+    - include_tasks: setup_car_rental.yml
+    
+    
+- hosts: metrics
+  become: yes
+  vars:
+    influxdb_url: https://dl.influxdata.com/influxdb/releases/influxdb-1.7.1.x86_64.rpm
+    telegraf_url: https://dl.influxdata.com/telegraf/releases/telegraf-1.8.3-1.x86_64.rpm
+    grafana_url: https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana-5.3.4-1.x86_64.rpm
+    db_node_ip: 127.0.0.1
+    metric_store_ip: 127.0.0.1
+  tasks:
+    - include_tasks: tasks/os-dependencies.yml
+    - include_tasks: telegraf/tasks/install-telegraf.yml
+    - include_tasks: influx/tasks/install-influx.yml
+    - include_tasks: grafana/tasks/install-grafana.yml
+  
+
+
+- hosts: application
+  become: yes
+  gather_facts: yes
+  vars:
+    domain_name: "tarkowskim.pl"
+    service_admin_email: "tarkowskim@gmail.com"
+    service_root_directory: "/opt"
+    letsencrypt_ssl_dir: "/etc/letsencrypt/live"
+  tasks:
+    - include_tasks: nginx/tasks/nginx.yml
